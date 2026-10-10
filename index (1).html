@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050a14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Level Up">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Level Up System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Chakra+Petch:wght@500;600;700&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+img{max-width:100%}
+[hidden]:not([hidden=until-found i]){display:none!important}
+</style>
+<style>
+:root{
+  /* Layout: one phone-width column. HUD on top, System-window panels in the middle, tab bar fixed at the bottom. */
+  --bg:#050a14;
+  --panel:#09111f;
+  --panel-2:#0e1c33;
+  --line:#17335c;
+  --glow:#3fb1ff;
+  --glow-dim:#2a7ad1;
+  --halo:rgba(63,177,255,.16);
+  --text:#d9e8fb;
+  --mute:#8097b6;
+  --good:#52e3b0;
+  --bad:#ff6178;
+  --gold:#ffd166;
+  --f-display:'Chakra Petch',system-ui,sans-serif;
+  --f-body:'Barlow',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  background-image:radial-gradient(120% 50% at 50% -8%,var(--halo),transparent 70%);
+  background-repeat:no-repeat;
+  color:var(--text);
+  font:16px/1.45 var(--f-body);
+  padding-inline:16px;
+  padding-block:16px 110px;
+  min-height:100%;
+}
+.shell{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3,p,ul{margin:0}
+ul{padding:0;list-style:none}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
+.num,.tnum{font-variant-numeric:tabular-nums}
+
+.eyebrow{font:600 .72rem/1 var(--f-display);letter-spacing:.18em;text-transform:uppercase;color:var(--glow)}
+.mute{color:var(--mute)}
+.panel{position:relative;background:var(--panel);border:1px solid var(--line);padding:16px}
+.panel::before,.panel::after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--glow);pointer-events:none}
+.panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+
+/* HUD */
+.hud{display:flex;flex-direction:column;gap:12px}
+.hud-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.title{font:700 2rem/1 var(--f-display);letter-spacing:.02em;margin-top:6px;text-wrap:balance}
+.rank{display:flex;flex-direction:column;align-items:center;min-width:64px;padding:6px 10px;border:1px solid var(--glow);box-shadow:0 0 14px var(--halo) inset,0 0 14px var(--halo)}
+.rank span{font:600 .6rem/1 var(--f-display);letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+.rank b{font:700 2rem/1.1 var(--f-display);color:var(--glow);text-shadow:0 0 12px var(--glow)}
+.rank-S b,.rank-A b{color:var(--gold);text-shadow:0 0 12px var(--gold)}
+.bar{height:10px;background:var(--panel-2);border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--glow-dim),var(--glow));box-shadow:0 0 12px var(--glow);transition:width .5s ease}
+.bar.gold>i{background:linear-gradient(90deg,#c8962c,var(--gold));box-shadow:0 0 12px var(--gold)}
+.xp-line{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mute);font-variant-numeric:tabular-nums}
+
+/* Day header */
+.day-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.day-head h2{font:600 1.35rem/1.1 var(--f-display);margin-top:6px}
+.count{font:600 1.5rem/1 var(--f-display);text-align:right;font-variant-numeric:tabular-nums}
+.count b{color:var(--glow)}
+.count span{display:block;font:600 .62rem/1.4 var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+
+/* Quests */
+.quests{display:flex;flex-direction:column;gap:10px}
+.quest{display:grid;grid-template-columns:minmax(0,1fr) 64px;background:var(--panel);border:1px solid var(--line);transition:border-color .2s}
+.quest.is-done{border-color:#1d4a45;background:#08141a}
+.q-main{background:none;border:0;text-align:left;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.q-title{font:600 1.1rem/1.15 var(--f-display)}
+.is-done .q-title{color:var(--mute);text-decoration:line-through;text-decoration-color:var(--line)}
+.q-meta{display:flex;flex-wrap:wrap;gap:4px 10px;font:600 .7rem/1.3 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.q-meta b{color:var(--glow)}
+.is-done .q-meta b{color:var(--good)}
+.q-meta i{font-style:normal}
+.q-meta .weak{color:var(--gold)}
+.q-sum{font-size:.93rem;color:var(--text);opacity:.85}
+.q-check{border:0;border-left:1px solid var(--line);background:var(--panel-2);display:grid;place-items:center;min-height:64px}
+.q-check svg{width:26px;height:26px;stroke:var(--glow);fill:none;stroke-width:2.5;opacity:.5}
+.q-check:active{background:var(--line)}
+.is-done .q-check{background:#0f3a35;border-left-color:#1d4a45}
+.is-done .q-check svg{stroke:var(--good);opacity:1}
+.q-body{grid-column:1/-1;border-top:1px dashed var(--line);padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.q-body li,.tips li{position:relative;padding-left:18px;font-size:.95rem}
+.q-body li+li{margin-top:4px}
+.q-body li::before,.tips li::before{content:"";position:absolute;left:2px;top:.6em;width:6px;height:6px;background:var(--glow);transform:rotate(45deg)}
+.tips{display:flex;flex-direction:column;gap:8px}
+.weigh{display:flex;gap:8px}
+.weigh input{flex:1;min-width:0}
+.fb{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:10px}
+.fb span{flex:1 1 100%;font-size:.85rem;color:var(--mute)}
+.fb span b{color:var(--glow)}
+.fb .btn{flex:1 1 0}
+.field{background:var(--panel-2);border:1px solid var(--line);padding:10px 12px;min-height:44px;width:100%;border-radius:0}
+.field:focus{border-color:var(--glow);outline:none;box-shadow:0 0 0 1px var(--glow)}
+textarea.field{resize:vertical;min-height:84px}
+.btn{background:transparent;border:1px solid var(--glow);color:var(--glow);padding:10px 16px;min-height:44px;font:600 .8rem/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase}
+.btn:active{background:var(--halo)}
+.btn.sm{min-height:40px;padding:8px 10px;font-size:.7rem;letter-spacing:.1em}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.filebtn{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.filebtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.hint{font-size:.88rem;color:var(--mute)}
+.linkbtn{display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
+
+/* Notices and coach */
+.notices{display:flex;flex-direction:column;gap:10px}
+.notice{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;border:1px solid var(--bad);background:#1a0c14;padding:12px 14px}
+.notice.boss{border-color:var(--gold);background:#1b160a}
+.notice.info{border-color:var(--glow);background:#0a1626}
+.notice p{font-size:.92rem}
+.notice .btn{margin-top:10px;min-height:40px;padding:8px 14px}
+.notice strong,.coach strong{font:700 .72rem/1 var(--f-display);letter-spacing:.16em;text-transform:uppercase;display:block;margin-bottom:6px;color:var(--bad)}
+.notice.boss strong{color:var(--gold)}
+.notice.info strong{color:var(--glow)}
+.coach{border:1px solid var(--glow);background:#0a1626;padding:12px 14px}
+.coach strong{color:var(--glow)}
+.coach p{font-size:.92rem}
+.coach.comeback{border-color:var(--gold);background:#1b160a}
+.coach.comeback strong{color:var(--gold)}
+.x{background:none;border:0;color:var(--mute);min-width:44px;min-height:44px;margin:-10px -10px 0 0;font-size:1.3rem}
+
+/* Status */
+.stats{display:flex;flex-direction:column;gap:14px}
+.stat-row{display:grid;grid-template-columns:96px minmax(0,1fr) 40px;gap:10px;align-items:center}
+.stat-row b{font:600 .85rem/1 var(--f-display);letter-spacing:.12em;text-transform:uppercase}
+.stat-row span{text-align:right;font:700 1.1rem/1 var(--f-display);font-variant-numeric:tabular-nums}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kv{border:1px solid var(--line);background:var(--panel);padding:12px 14px}
+.kv small{display:block;font:600 .62rem/1.4 var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.kv b{font:700 1.5rem/1.2 var(--f-display);font-variant-numeric:tabular-nums}
+.sec{font:600 .78rem/1 var(--f-display);letter-spacing:.18em;text-transform:uppercase;color:var(--glow);margin-bottom:12px}
+.chart{width:100%;height:auto;display:block}
+.chart .ax{fill:var(--mute);font:10px var(--f-body)}
+.chart .ln{fill:none;stroke:var(--glow);stroke-width:2}
+.chart .dt{fill:var(--bg);stroke:var(--glow);stroke-width:2}
+.chart .gd{stroke:var(--line);stroke-width:1}
+
+/* Boss */
+.boss-name{font:700 1.5rem/1.1 var(--f-display);margin:8px 0 4px;text-wrap:balance}
+.boss-parts{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.part-top{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.reward{margin-top:14px;font:600 .8rem/1.3 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.log{display:flex;flex-direction:column;gap:6px}
+.log li{display:flex;justify-content:space-between;gap:12px;border:1px solid var(--line);padding:10px 12px;font-size:.92rem;font-variant-numeric:tabular-nums}
+.log .won{color:var(--gold)}
+.log .lost{color:var(--mute)}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.lab{display:flex;flex-direction:column;gap:6px;font:600 .68rem/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+
+/* Setup */
+.form{display:flex;flex-direction:column;gap:14px}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.day{min-height:44px;background:var(--panel-2);border:1px solid var(--line);font:600 .78rem/1 var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.day[aria-pressed="true"]{border-color:var(--glow);color:var(--glow);background:var(--halo)}
+
+/* Tab bar */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.nav button{background:none;border:0;min-height:58px;font:600 .74rem/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);position:relative}
+.nav button[aria-current="page"]{color:var(--glow)}
+.nav button[aria-current="page"]::before{content:"";position:absolute;top:0;left:22%;right:22%;height:2px;background:var(--glow);box-shadow:0 0 10px var(--glow)}
+
+/* Toasts and overlay */
+.toasts{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;flex-direction:column;gap:8px;align-items:center;z-index:20;pointer-events:none}
+.toast{max-width:420px;width:100%;background:var(--panel);border:1px solid var(--glow);padding:10px 14px;box-shadow:0 0 18px var(--halo);animation:drop .3s ease-out}
+.toast.bad{border-color:var(--bad)}
+.toast small{display:block;font:700 .66rem/1 var(--f-display);letter-spacing:.18em;text-transform:uppercase;color:var(--glow);margin-bottom:4px}
+.toast.bad small{color:var(--bad)}
+.toast.gold{border-color:var(--gold)}
+.toast.gold small{color:var(--gold)}
+.overlay{position:fixed;inset:0;z-index:30;background:rgba(2,6,14,.9);display:grid;place-items:center;padding:24px}
+.lvl{width:100%;max-width:360px;text-align:center;border:1px solid var(--glow);background:var(--panel);padding:32px 20px;box-shadow:0 0 40px var(--halo);animation:pop .5s cubic-bezier(.2,1.2,.3,1)}
+.lvl small{font:600 .75rem/1 var(--f-display);letter-spacing:.3em;text-transform:uppercase;color:var(--glow)}
+.lvl h2{font:700 3rem/1.05 var(--f-display);text-shadow:0 0 22px var(--glow);margin:14px 0 6px}
+.lvl .big{font:700 5rem/1 var(--f-display);color:var(--glow);text-shadow:0 0 28px var(--glow)}
+.lvl p{color:var(--mute);margin-top:10px}
+.lvl .btn{margin-top:22px}
+@keyframes drop{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.stat-row{grid-template-columns:80px minmax(0,1fr) 34px}.title{font-size:1.7rem}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div id="hud"></div>
+  <main id="view" class="shell" style="padding:0"></main>
+</div>
+<nav class="nav" id="nav" aria-label="Sections"></nav>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="overlay" id="overlay" hidden></div>
+
+<script>
+(()=>{
+'use strict';
+const LS='level-up-system-v1';
+const STAT={BODY:'Body',MIND:'Mind',CONTENT:'Content',WEALTH:'Wealth',DISC:'Discipline'};
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- dates ---------- */
+const pad=n=>String(n).padStart(2,'0');
+const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const pd=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
+const addD=(k,n)=>{const d=pd(k);d.setDate(d.getDate()+n);return dk(d)};
+const dow=k=>pd(k).getDay();
+const diff=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
+const today=()=>dk(new Date());
+const weekStart=k=>addD(k,-((dow(k)+6)%7));
+const fmtDay=k=>pd(k).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+
+/* ---------- levels ---------- */
+const need=L=>Math.round(150*Math.pow(L,1.4));
+const cum=L=>{let s=0;for(let i=1;i<L;i++)s+=need(i);return s};
+function lvl(xp){let L=1,rem=xp;while(rem>=need(L)){rem-=need(L);L++}return{L,into:rem,need:need(L)}}
+const rank=L=>L>=50?'S':L>=35?'A':L>=20?'B':L>=10?'C':L>=5?'D':'E';
+
+/* ---------- state ---------- */
+function fresh(){const t=today();return{v:2,name:'Player',startDate:t,nextJudge:t,totalXp:0,
+  stats:{BODY:0,MIND:0,CONTENT:0,WEALTH:0,DISC:0},counts:{},days:{},weights:[{d:t,kg:66}],goalKg:80,paceKg:1.5,
+  trainDays:[1,2,4,5],age:20,heightCm:184,subs:0,subsGoal:1000,bosses:{},notices:[],bestStreak:0,
+  bal:0,balGoal:1000,balAt:t,balPrev:null,
+  feel:{},lastBackup:0,updatedAt:0}}
+function normalize(o){
+  const f=fresh(),s=Object.assign(f,o);
+  for(const k of ['stats','counts','days','bosses','feel'])if(!s[k]||typeof s[k]!=='object')s[k]=fresh()[k];
+  s.stats=Object.assign({BODY:0,MIND:0,CONTENT:0,WEALTH:0,DISC:0},s.stats);
+  if(!Array.isArray(s.weights)||!s.weights.length)s.weights=fresh().weights;
+  if(!Array.isArray(s.trainDays))s.trainDays=[1,2,4,5];
+  if(!Array.isArray(s.notices))s.notices=[];
+  return s;
+}
+function loadLocal(){try{const r=localStorage.getItem(LS);if(r)return normalize(JSON.parse(r))}catch(e){}return null}
+let S=loadLocal()||fresh();
+const UI={tab:'quests',open:new Set(),resetArm:false,storeFail:false};
+try{localStorage.setItem(LS+'-t','1');localStorage.removeItem(LS+'-t')}catch(e){UI.storeFail=true}
+
+function persist(){
+  S.updatedAt=Date.now();
+  try{localStorage.setItem(LS,JSON.stringify(S));UI.storeFail=false}catch(e){UI.storeFail=true}
+}
+
+/* ---------- coach: plain rules that adapt quests to your history ---------- */
+const CORE=['vit','food','train','short','money'];
+const QN={vit:'Morning Supplements',food:'Fuel the Bulk',train:'Workout',short:'Post a Short',money:'Income Session'};
+const SCALED=['train','short','money'];
+const doneOn=(k,id)=>!!(S.days[k]&&S.days[k].done[id]!=null);
+
+/* How often a quest was done in the n days before k (today not counted). Needs 3+ days of history. */
+function rateInfo(id,k,n){
+  const to=diff(S.startDate,k),from=Math.max(0,to-n),len=to-from;
+  if(len<3)return null;
+  let d=0;
+  for(let i=from;i<to;i++)if(doneOn(addD(S.startDate,i),id))d++;
+  return{d,len,r:d/len};
+}
+const rate=(id,k,n)=>{const x=rateInfo(id,k,n);return x?x.r:null};
+/* Below 70% this week: ease back one step. Below 50%: two steps. */
+function auto(id,k){const r=rate(id,k,7);return r==null?0:r<.5?-2:r<.7?-1:0}
+const tierOf=(id,k)=>Math.floor(Math.max(0,(S.counts[id]||0)-(doneOn(k,id)?1:0))/7);
+/* Difficulty step = clears so far / 7, plus your Make harder/easier taps, plus the auto ease. */
+function lvlOf(id,k){return Math.max(-3,tierOf(id,k)+(S.feel[id]||0)+auto(id,k))}
+/* The quest you do least often (under 70% this week) */
+function weak(k){
+  let best=null;
+  for(const id of CORE){const r=rate(id,k,7);if(r!=null&&r<.7&&(!best||r<best.r))best={id,r}}
+  return best;
+}
+/* Comeback day: yesterday was not a full clear and 2 of the last 3 days were not. Lighter day, bonus XP. */
+function comeback(k){
+  if(diff(S.startDate,k)<3||allDone(addD(k,-1)))return false;
+  let m=0;for(let i=1;i<=3;i++)if(!allDone(addD(k,-i)))m++;
+  return m>=2;
+}
+/* Weight change in kg per week from the last 4 weigh-ins (needs a span of 10+ days) */
+function trend(){
+  const w=S.weights.slice(-4);
+  if(w.length<2)return null;
+  const span=diff(w[0].d,w[w.length-1].d);
+  if(span<10)return null;
+  return(w[w.length-1].kg-w[0].kg)/span*7;
+}
+function calAdj(){
+  const t=trend();
+  if(t==null)return{adj:0,t:null,note:''};
+  const g=S.paceKg/4.33;
+  if(t<0)return{adj:250,t,note:'Weight is dropping'};
+  if(t<g*.5)return{adj:150,t,note:'Gaining slower than planned'};
+  if(t>g*1.6)return{adj:-150,t,note:'Gaining faster than planned'};
+  return{adj:0,t,note:'On pace'};
+}
+function dowStats(k){
+  const t=Array.from({length:7},()=>[0,0]);
+  for(let c=S.startDate;c<k;c=addD(c,1)){const w=dow(c);t[w][1]++;if(allDone(c))t[w][0]++}
+  return t;
+}
+
+/* ---------- quests ---------- */
+function nutrition(k){
+  const kg=S.weights[S.weights.length-1].kg,train=S.trainDays.includes(dow(k));
+  const bmr=10*kg+6.25*(S.heightCm||184)-5*(S.age||20)+5;
+  const base=Math.max(200,Math.min(500,S.paceKg*7700/30.4));
+  const ca=calAdj();
+  const surplus=kg>=S.goalKg?0:Math.max(100,Math.min(750,base+ca.adj));
+  const kcal=Math.round((bmr*(train?1.55:1.4)+surplus)/10)*10;
+  const prot=Math.round(1.8*kg);
+  return{kcal,prot,meal:Math.round(kcal*.25/10)*10,snack:Math.round(kcal*.125/10)*10,pm:Math.round(prot*.25/5)*5,ps:Math.round(prot*.125/5)*5,train,adj:ca.adj,t:ca.t,note:ca.note};
+}
+const GROW=['Study one successful Shorts channel in your niche and note what they repeat','Draft 3 Short ideas that could bring in subscribers',
+  'Review what got views this week and plan the next step','Check your channel progress toward monetization in YouTube Studio'];
+const EARN=['Brainstorm 5 ways to earn on the side','Pick one side-income idea and write how you would test it this week',
+  'Learn one skill that earns: editing, thumbnails, copywriting or freelancing','Write down 3 things you could offer someone for money this month'];
+const REVIEW='Weekly review: check YouTube Studio, note what worked, plan next week’s 3 Short ideas';
+/* Growth topics first while the channel is under half its subscriber target, earning topics after that. */
+function focusFor(k,idx){
+  if(dow(k)===0)return REVIEW;
+  const stage=S.subsGoal>0?S.subs/S.subsGoal:0;
+  const main=stage<.5?GROW:EARN,other=stage<.5?EARN:GROW;
+  return idx%3===2?other[Math.floor(idx/3)%other.length]:main[(idx-Math.floor(idx/3))%main.length];
+}
+/* ---------- content libraries: reading list, daily upgrades, side quests ---------- */
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+/* Walks a list in a fixed scrambled order that does not repeat until every item has been used */
+function pick(a,i,s){let st=s;while(gcd(st,a.length)!==1)st++;return a[(i*st+3)%a.length]}
+const GB=id=>'https://www.gutenberg.org/ebooks/'+id;
+const GS=q=>'https://www.gutenberg.org/ebooks/search/?query='+encodeURIComponent(q);
+/* Free public-domain texts on Project Gutenberg. w = weeks spent on each book before the next one. */
+const BOOKS=[
+ {a:'Plato',t:'Apology',w:1,u:GB(1656),why:'Socrates on trial, refusing to stop questioning even with his life at stake.',
+  q:['What does Socrates mean by knowing that he knows nothing, and why does he call that wisdom?','He would rather die than stop thinking out loud. What would you refuse to give up?','Which of your own beliefs have you never really questioned?']},
+ {a:'Epictetus',t:'Enchiridion (The Handbook)',w:1,u:GS('epictetus enchiridion'),why:'A short Stoic manual built on one idea: separate what is up to you from what is not.',
+  q:['What is stressing you today that is outside your control?','If you fully accepted that, what would you do instead?','Where did you react today when you could have paused first?']},
+ {a:'Marcus Aurelius',t:'Meditations',w:2,u:GB(2680),why:'A Roman emperor’s private notes to himself on discipline, duty and perspective. Read a few lines at a time.',
+  q:['How would Marcus tell you to handle the hardest task today?','What are you putting off as if you had unlimited time?','Which complaint of yours looks small from far above?']},
+ {a:'Benjamin Franklin',t:'Autobiography',w:1,u:GS('franklin autobiography'),why:'Franklin tracked 13 virtues every day in a notebook. The original habit tracker, and he built a life with it.',
+  q:['Which one virtue would change your life most if you worked on it for a month?','How did Franklin handle slipping up? Could you do the same?','What do you want your own list of 13 to include?']},
+ {a:'Seneca',t:'On the Shortness of Life',w:1,u:GS('seneca shortness of life'),why:'Life is not short, he argues, we waste most of it. A sharp look at how you spend time.',
+  q:['Where did your hours go this week? Were they really yours?','Which activity would you drop if you took your time seriously?','What would you do with a free day if nothing could interrupt you?']},
+ {a:'Lao Tzu',t:'Tao Te Ching',w:1,u:GS('tao te ching'),why:'Short chapters on effortless action, humility and flow. Slow reading, one chapter is plenty.',
+  q:['Where are you forcing something that might work better with less effort?','What does strength without force look like in your own life?','Which chapter did you least understand? Reread it once.']},
+ {a:'Sun Tzu',t:'The Art of War',w:1,u:GB(132),why:'Strategy, preparation and choosing your battles. It reads as well for business and content as for war.',
+  q:['What battle are you fighting that you could avoid or win earlier by preparing?','What is your channel’s advantage that others lack?','Which of your plans depends on luck instead of preparation?']},
+ {a:'Niccolò Machiavelli',t:'The Prince',w:1,u:GB(1232),why:'A cold-eyed look at power, influence and human nature. Read it critically, not as a moral guide.',
+  q:['What does he assume about people? Is that true of the people you know?','Where would planning ahead save you trouble in your own plans?','Where would you disagree with him, and why?']},
+ {a:'René Descartes',t:'Discourse on the Method',w:1,u:GB(59),why:'The man who tore down everything he believed to see what was still standing. A manual for clear thinking.',
+  q:['What would you still be sure of if you doubted everything?','Which big problem of yours could be split into smaller parts?','Where do you accept something just because everyone does?']},
+ {a:'Ralph Waldo Emerson',t:'Self-Reliance (in Essays: First Series)',w:1,u:GS('emerson essays first series'),why:'A famous case for trusting your own mind over the crowd. Look for the Self-Reliance essay.',
+  q:['Where are you following the crowd instead of your own judgement?','What would you make if nobody could judge it?','What is one thing you believe that most people around you do not?']},
+ {a:'Aristotle',t:'Nicomachean Ethics',w:2,u:GB(8438),why:'How to live well: character is built by what you repeatedly do. Start with Book I.',
+  q:['Which of your habits is building the person you want to become?','What is the sensible middle between too much and too little for you now, in effort, rest or money?','Who do you know that lives well, and what do they do daily?']},
+ {a:'Plato',t:'The Republic',w:2,u:GB(1497),why:'Justice, power and truth. Try the Allegory of the Cave in Book VII first, then go back to Book I.',
+  q:['In the cave, what are the shadows in your own life?','What would it cost you to turn around and look at the real thing?','What makes a person just, and are you that person?']},
+ {a:'John Stuart Mill',t:'On Liberty',w:2,u:GB(34901),why:'Why free thought and open argument matter, even when the other side is wrong.',
+  q:['What opinion do you hold that you have only heard one side of?','Who disagrees with you in a way you could learn from?','Why does Mill say silencing an opinion hurts everyone?']},
+ {a:'Friedrich Nietzsche',t:'Beyond Good and Evil',w:2,u:GB(4363),why:'Dense, provocative aphorisms about values, will and self-deception. A few lines a day is enough.',
+  q:['Which aphorism annoyed you most? What does that tell you?','Which of your values did you choose and which did you inherit?','What would you do if you were fully honest with yourself?']}
+];
+function bookFor(idx){
+  const total=BOOKS.reduce((s,b)=>s+b.w,0);
+  let wk=Math.floor(Math.max(0,idx)/7)%total;
+  for(const b of BOOKS){if(wk<b.w)return{b,wk:wk+1};wk-=b.w}
+  return{b:BOOKS[0],wk:1};
+}
+const TIPS=[
+ ['Add a vitamin C fruit (kiwi, orange or berries) to one meal today.','Vitamin C helps your body absorb iron from plant foods and eggs.'],
+ ['Eat 2 different coloured vegetables today.','Different colours bring different vitamins and plant compounds.'],
+ ['Try a fruit you rarely eat: pomegranate, mango, pear or plum.','Variety covers more vitamins than eating the same three fruits.'],
+ ['Have a handful of nuts as one snack.','About 170 kcal plus healthy fats and magnesium, an easy bulking win.'],
+ ['Make a smoothie: milk, banana, oats and peanut butter.','Easy 500+ kcal when you do not feel like chewing another meal.'],
+ ['Eat fatty fish today or this week: salmon, sardines or mackerel (tinned counts).','Rich in omega-3, vitamin D and protein.'],
+ ['Add 2 or 3 eggs to a meal.','Cheap, complete protein, with B12 and choline.'],
+ ['Swap one snack for Greek yogurt or skyr with fruit.','High protein, easy on the stomach and good for gut bacteria.'],
+ ['Add lentils, chickpeas or beans to one meal.','Protein, fibre, iron and slow energy in one cheap food.'],
+ ['Eat a handful of dark leafy greens (spinach, kale).','A good source of magnesium, folate and vitamin K.'],
+ ['Have pumpkin seeds or almonds today.','Among the best food sources of magnesium, which supports sleep and muscles.'],
+ ['Eat a fermented food: kefir, sauerkraut or yogurt with live cultures.','Feeds the gut bacteria that help digestion and immunity.'],
+ ['Get protein within an hour after your workout.','Gives your muscles what they need to repair and grow.'],
+ ['Vitamin D check: get daylight today, and if you rarely do, ask a doctor or pharmacist whether a supplement fits you.','Sunlight is the main source. In darker months many people run low, and a blood test settles it.'],
+ ['Drink a glass of water first thing and one with each meal.','Even mild dehydration hurts focus and training.'],
+ ['Check your urine colour once today. Pale yellow is the target.','A free hydration check that needs no gadget.'],
+ ['Stop caffeine by early afternoon.','Caffeine stays in the body for hours and can cut deep sleep even if you fall asleep fine.'],
+ ['Replace one sugary drink with water or milk.','Liquid sugar adds calories without filling you or giving nutrients.'],
+ ['Get 10 minutes of outdoor daylight before noon.','Morning light sets your body clock and helps you sleep better that night.'],
+ ['Wake up at the same time all week, weekends included.','A steady rhythm improves sleep quality more than a long lie-in.'],
+ ['Keep your bedroom cool and dark tonight.','Your body drops its temperature to sleep, so a cooler room helps.'],
+ ['Finish your last big meal 2 to 3 hours before bed.','Late heavy meals can disturb sleep, and sleep is when you build muscle.'],
+ ['Every hour sitting, stand up and stretch for a minute.','Breaking up long sitting helps your back, hips and energy.'],
+ ['Use the 20-20-20 rule: every 20 minutes, look at something far away for 20 seconds.','Reduces eye strain from editing and scrolling.'],
+ ['Pull your shoulder blades back and down whenever you notice your posture.','Phone and desk time pull you forward, and this undoes it.'],
+ ['Floss tonight.','Gum health is linked to heart health, and it takes 2 minutes.'],
+ ['Take a 5 minute walk after your biggest meal.','A short walk after eating helps blood sugar and digestion.'],
+ ['Eat your protein first at your next meal, then the rest.','It makes hitting your daily protein target easier on a bulk.']
+];
+const SIDE=[
+ {n:'Five New Words',s:'MIND',x:12,m:8,t:'Learn five words in a language you want.',l:['Pick a language you want to learn','Write each word with your own sentence','Say each one aloud three times','Try to recall them tomorrow before looking']},
+ {n:'Quote by Heart',s:'MIND',x:12,m:5,t:'Memorise one line from your reading.',l:['Choose one line that hit you','Write it out by hand','Say it from memory tonight']},
+ {n:'Steelman',s:'MIND',x:20,m:10,t:'Write the best argument for a view you disagree with.',l:['Pick an opinion you reject','Write its strongest case as its fans would','Then note if anything in it is actually right','Real thinkers can state the other side so well its owner would agree']},
+ {n:'Teach It Back',s:'CONTENT',x:20,m:10,t:'Explain one idea you learned this week in 60 seconds.',l:['Pick one idea from your reading or a video','Say it aloud as if teaching a friend, or record it','If you stumble, you found what you do not understand yet','Great seeds for a Short']},
+ {n:'Pre-Mortem',s:'WEALTH',x:20,m:10,t:'Imagine your plan failed in a year. Why?',l:['Pick your channel or a money plan','Write 3 reasons it could fail','Choose the likeliest and do one thing about it today']},
+ {n:'Cold Finish',s:'DISC',x:15,m:2,t:'End your shower with 30 seconds of cold water.',l:['Last 30 seconds cold, breathe slowly','Do it because it is uncomfortable, not for the cold','Skip it if you feel unwell']},
+ {n:'Ten-Minute Dread',s:'DISC',x:20,m:10,t:'Work 10 minutes on the thing you keep avoiding.',l:['Name the task you have been dodging','Set a 10 minute timer and start badly','You may stop when it rings, but you usually will not']},
+ {n:'Reset Your Space',s:'DISC',x:12,m:10,t:'Clear your desk and room for 10 minutes.',l:['Bin trash, return cups, clear the desk','Make the bed','Leave one clean place to start tomorrow']},
+ {n:'Dawn Without Phone',s:'DISC',x:20,m:20,t:'No phone for the first 20 minutes after waking.',l:['Leave the phone where you cannot reach it from bed','Drink water, wash, get daylight','Think of your one top task before any screen tells you what to care about']},
+ {n:'Mobility Flow',s:'BODY',x:12,m:6,t:'Five minutes of hips, shoulders and spine.',l:['Deep squat hold, 1 minute','Cat-cow, 10 slow reps','Doorway chest stretch, 30 seconds each side','Hip flexor stretch, 45 seconds each side']},
+ {n:'Walk and Think',s:'MIND',x:15,m:15,t:'15 minute walk with no phone, one problem in mind.',l:['Leave the phone at home or on silent in a pocket','Pick one problem and turn it over as you walk','Write down any idea you got when you are back']},
+ {n:'Box Breathing',s:'MIND',x:10,m:5,t:'Five minutes of 4-4-4-4 breathing.',l:['Breathe in 4 seconds, hold 4, out 4, hold 4','Repeat for 5 minutes','Good before filming or when stressed']},
+ {n:'Spending Leak',s:'WEALTH',x:15,m:8,t:'Review last week’s spending and find one leak.',l:['Open your bank app and scan the last 7 days','Find one purchase you do not miss','Cancel it, or write a rule so it does not repeat']},
+ {n:'Money Concept',s:'WEALTH',x:15,m:10,t:'Learn one money idea and explain it in 2 lines.',l:['Choose one: compound interest, inflation, index funds, emergency fund, taxes on income','Read or watch one short explanation','Write what it means for you in two lines']},
+ {n:'Edit Speedrun',s:'CONTENT',x:20,m:20,t:'Recut an old Short faster than you made it.',l:['Pick a past Short','Time yourself while you re-edit it','Beat your old time, and note what slowed you']},
+ {n:'Hook Lab',s:'CONTENT',x:20,m:10,t:'Write 5 different hooks for one idea.',l:['Pick one Short idea','Write 5 opening lines: a question, a bold claim, a number, a story, a mistake','Pick the strongest and save the rest']},
+ {n:'Sound-Off Study',s:'CONTENT',x:15,m:10,t:'Watch 5 top Shorts with the sound off.',l:['Pick Shorts from channels in your niche','Note what keeps you watching without sound','Write down two things you could copy the idea of, not the content']},
+ {n:'Voice Rep',s:'CONTENT',x:15,m:5,t:'Record a 30 second voice note explaining something clearly.',l:['Choose a topic you know well','Record one take of 30 seconds','Listen once and note one fix: pace, filler words or energy']},
+ {n:'Reach Out',s:'MIND',x:15,m:5,t:'Message someone you care about and say something specific.',l:['Pick someone you have not talked to lately','Tell them one specific thing you appreciate or remember','No agenda, just warmth']},
+ {n:'Phone-Free Hour',s:'MIND',x:25,m:60,t:'One hour with someone, phones away.',l:['Choose your girlfriend, a friend or family','Put both phones out of sight','Talk, walk or cook together','Close relationships are one of the strongest predictors of a good life']},
+ {n:'Declutter Ten',s:'DISC',x:12,m:10,t:'Get rid of 10 things you do not need.',l:['Clothes, cables, old papers, anything unused','Bin, donate or sell them','Fewer things means less to manage']},
+ {n:'Fear Inventory',s:'MIND',x:15,m:8,t:'Write a fear and the smallest step against it.',l:['Name one thing you are afraid of or avoiding','Write the worst realistic outcome','Write the smallest step that tests it, and do it this week']},
+ {n:'Skill Sample',s:'WEALTH',x:20,m:15,t:'Spend 15 minutes doing one earning skill, not reading about it.',l:['Pick one: editing, thumbnails, copywriting, a simple website','Make one small real thing','Save it, since this could become a portfolio piece']},
+ {n:'Three Good Things',s:'MIND',x:10,m:5,t:'Write three good things from today and why they happened.',l:['Small things count','Write why each happened, and your part in it','A proven way to lift mood when done for a couple of weeks']}
+];
+
+function questsFor(k){
+  const idx=Math.max(0,diff(S.startDate,k));
+  const train=S.trainDays.includes(dow(k));
+  const cb=comeback(k);
+  const out=[];
+
+  out.push({id:'vit',name:'Morning Supplements',stat:'DISC',pts:1,xp:10,req:true,mins:2,
+    sum:'Creatine, omega-3 and zinc after breakfast.',
+    lines:['Take them after breakfast','Creatine, omega-3 and zinc','Follow the dose printed on each label']});
+
+  const tf=tierOf('food',k),nu=nutrition(k);
+  const trendLine=nu.t==null?'Weight trend shows up after Sunday weigh-ins over about 2 weeks, then calories adjust by themselves'
+    :'Weight trend '+(nu.t>=0?'+':'')+nu.t.toFixed(2)+' kg a week. '+nu.note+(nu.adj?': calories '+(nu.adj>0?'+':'')+nu.adj+' kcal today.':'.');
+  out.push({id:'food',name:'Fuel the Bulk',stat:'BODY',pts:1,xp:15,req:true,mins:5,
+    sum:'Eat about '+nu.kcal+' kcal and '+nu.prot+' g protein today.',
+    lines:['Target: about '+nu.kcal+' kcal ('+(nu.train?'workout day':'rest day')+'), at least '+nu.prot+' g protein',
+      '3 meals: about '+nu.meal+' kcal and '+nu.pm+' g protein each',
+      '2 snacks: about '+nu.snack+' kcal and '+nu.ps+' g protein each',
+      'Calories are an estimate from your weight, height and age (set in Setup)',
+      trendLine,
+      ...(tf>=2?['Easy extra calories: nuts, peanut butter, milk or yogurt']:[]),
+      ...(tf>=4?['Write down everything you ate']:[])]});
+
+  const tw=lvlOf('train',k),f=Math.max(.7,Math.pow(1.1,tw))*(cb?.8:1),R=n=>Math.max(1,Math.round(n*f));
+  const hiw=Math.max(0,tw);
+  if(train){
+    const rounds=Math.max(2,3+Math.floor(hiw/5)-(cb?1:0));
+    const ex=[['Push-ups',10],['Squats holding a 5kg dumbbell, 3 seconds down',15],['One-arm rows with 5kg, each side',10],
+      ['Overhead press with 5kg',10],['Curls with 5kg',12],['Glute bridges with 5kg on your hips',15]];
+    out.push({id:'train',name:'Home Workout',stat:'BODY',pts:2,xp:40,req:true,mins:cb?22:30,fb:true,step:tw,
+      sum:(cb?'Comeback load. ':'')+rounds+' rounds plus finishers. Rank '+rank(lvl(S.totalXp).L)+' volume.',
+      lines:[...(cb?['Comeback day: lighter on purpose, the goal is to get moving again']:[]),
+        'Warm up 2 minutes: arm circles with the 2kg dumbbells',
+        rounds+' rounds, rest 60 seconds between rounds',
+        ...ex.map(([n,b])=>R(b)+' × '+n),
+        'Plank '+R(30)+' seconds each round',
+        'Finisher: '+R(20)+' push-ups total, break them up as needed',
+        'Finisher: '+R(50)+' curls with the 2kg dumbbells total',
+        'Slow down: 3 seconds on the way down']});
+    out.push({id:'rest',name:'Evening Walk',stat:'BODY',pts:1,xp:8,req:false,mins:10,
+      sum:'Optional 10 minute walk.',lines:['10 minute easy walk','Helps digestion and sleep']});
+  }else{
+    out.push({id:'train',name:'Light Day Drill',stat:'BODY',pts:2,xp:30,req:true,mins:cb?10:15,fb:true,step:tw,
+      sum:(cb?'Comeback load. ':'')+R(20)+' push-ups, '+R(50)+' curls and more with the 2kg dumbbells.',
+      lines:[...(cb?['Comeback day: lighter on purpose, the goal is to get moving again']:[]),
+        R(20)+' push-ups, any number of sets',
+        R(50)+' curls with the 2kg dumbbells, any number of sets',
+        R(30)+' lateral raises with the 2kg dumbbells',
+        R(20)+' squats with the 5kg dumbbell',
+        R(15)+' glute bridges',
+        'Plank '+R(40)+' seconds',
+        'Easy pace, this is for recovery, not a max effort']});
+  }
+
+  const ts=lvlOf('short',k),hs=cb?0:Math.max(0,ts);
+  const steps=['Film, edit and post 1 YouTube Short','Write the hook (first 2 seconds) before you film',
+    'Put a searchable keyword in the title','Check yesterday’s Short in YouTube Studio: views and viewer retention',
+    'Reply to 5 comments','Write down one thing to improve in the next Short'];
+  out.push({id:'short',name:'Post a Short',stat:'CONTENT',pts:2,xp:30,req:true,mins:Math.min(30,15+hs*3),fb:true,step:ts,
+    sum:steps[0]+(hs>0?' (+'+Math.min(hs,5)+' extra step'+(hs>1?'s':'')+')':'.'),
+    lines:[...steps.slice(0,Math.min(steps.length,1+hs)),...(hs===0&&(ts<0||cb)?['Keep it simple: a posted Short beats a perfect one']:[])]});
+
+  const tm=lvlOf('money',k),mins=cb?15:Math.min(30,15+5*Math.max(0,tm));
+  const fc=focusFor(k,idx);
+  out.push({id:'money',name:'Income Session',stat:'WEALTH',pts:2,xp:25,req:true,mins,fb:true,step:tm,
+    sum:mins+' minutes. '+fc+'.',lines:[mins+' minute timer, phone away',fc]});
+
+  if(dow(k)===0){
+    out.push({id:'weigh',name:'Weekly Weigh-in',stat:'BODY',pts:1,xp:25,req:true,mins:2,input:true,
+      sum:'Weigh yourself and log it.',
+      lines:['Weigh after waking, before eating','Same scale each week']});
+  }
+
+  /* Bonus quests: never required, so they never affect streaks or penalties */
+  const rt=tierOf('read',k),rm=cb?10:Math.min(20,10+2*rt),bk=bookFor(idx),pr=bk.b.q[idx%bk.b.q.length];
+  out.push({id:'read',name:'Read the Greats',stat:'MIND',pts:1,xp:15,req:false,mins:rm,
+    sum:bk.b.a+': '+bk.b.t+'. '+rm+' minutes.',
+    lines:[bk.b.a+': '+bk.b.t+(bk.b.w>1?' (week '+bk.wk+' of '+bk.b.w+')':''),bk.b.why,
+      'Read '+rm+' minutes from where you stopped. Timer on, phone away',
+      'Think about: '+pr,
+      'Finish with one sentence in your own words about what you read',
+      'Old translations can feel stiff. That is normal, so go slowly and reread a line if needed'],
+    extra:'<a class="btn linkbtn" href="'+esc(bk.b.u)+'" target="_blank" rel="noopener">Open the book</a>'});
+  out.push({id:'wind',name:'Screens Off',stat:'BODY',pts:1,xp:12,req:false,mins:30,
+    sum:'No screens for the last 30 minutes before bed.',
+    lines:['Phone and screens off 30 minutes before you sleep','Charge the phone across the room, not by the bed','Dim the lights, stretch or read on paper','Write tomorrow’s top 3 tasks on paper','Why: bright screens and scrolling delay sleep, and sleep is when you build muscle and memory']});
+  const tip=pick(TIPS,idx,5);
+  out.push({id:'upg',name:'Daily Upgrade',stat:'BODY',pts:1,xp:8,req:false,mins:3,sum:tip[0],lines:[tip[0],'Why: '+tip[1]]});
+  const sd=pick(SIDE,idx,11);
+  out.push({id:'side',name:'Side Quest: '+sd.n,stat:sd.s,pts:1,xp:sd.x,req:false,mins:sd.m,sum:sd.t,lines:sd.l});
+  if(dow(k)===0){
+    out.push({id:'vault',name:'Vault Check-in',stat:'WEALTH',pts:1,xp:8,req:false,mins:5,
+      sum:'Update your savings balance and pay yourself first.',
+      lines:['Update your savings balance on the Boss tab','Move a fixed amount into savings before you spend on anything else','Small amounts count, the habit matters more than the size','The Vault pays out when Sunday ends'],
+      extra:'<button class="btn" data-act="tab" data-t="boss">Open the Vault</button>'});
+  }
+  return out;
+}
+/* Required quests, kept independent of questsFor so the coach rules never loop back on themselves */
+function reqIds(k){
+  const train=S.trainDays.includes(dow(k));
+  const a=[['vit','Morning Supplements'],['food','Fuel the Bulk'],['train',train?'Home Workout':'Light Day Drill'],['short','Post a Short'],['money','Income Session']];
+  if(dow(k)===0)a.push(['weigh','Weekly Weigh-in']);
+  return a.map(([id,name])=>({id,name}));
+}
+function allDone(k){return reqIds(k).every(q=>doneOn(k,q.id))}
+function streakPrev(k){let n=0,c=addD(k,-1);while(c>=S.startDate&&allDone(c)){n++;c=addD(c,-1)}return n}
+function streak(){const k=today();const n=streakPrev(k)+(allDone(k)?1:0);if(n>S.bestStreak)S.bestStreak=n;return n}
+
+/* ---------- bosses and penalties ---------- */
+function weekTally(ws){
+  const from=ws<S.startDate?S.startDate:ws,to=addD(ws,6);
+  const t={vit:[0,0],train:[0,0],short:[0,0]};
+  for(let c=from;c<=to;c=addD(c,1)){
+    t.vit[1]++;t.vit[0]+=doneOn(c,'vit')?1:0;
+    t.short[1]++;t.short[0]+=doneOn(c,'short')?1:0;
+    t.train[1]++;t.train[0]+=doneOn(c,'train')?1:0;
+  }
+  const done=t.vit[0]+t.short[0]+t.train[0],total=t.vit[1]+t.short[1]+t.train[1];
+  return{...t,done,total,goal:Math.ceil(total*0.8)};
+}
+function judgeWeek(ws){
+  const t=weekTally(ws);
+  if(!t.total)return;
+  const won=t.done>=t.goal;
+  S.bosses[ws]={won,done:t.done,total:t.total};
+  if(won){S.totalXp+=150;S.stats.DISC+=3;S.notices.push({boss:true,ws,done:t.done,total:t.total})}
+}
+/* Vault: every Sunday the savings balance pays XP. 10 base, up to 30 more as the balance nears the goal, +15 if it grew.
+   Capped at 55 a week so it can never outrun the daily quests. Pauses if the balance has not been updated for 3 weeks. */
+function judgeVault(ws){
+  const end=addD(ws,6);
+  if(S.balGoal>0&&S.bal>0&&diff(S.balAt,end)<=21){
+    const p=Math.min(1,S.bal/S.balGoal),grew=S.balPrev!=null&&S.bal>S.balPrev;
+    const xp=Math.round(10+30*p)+(grew?15:0);
+    S.totalXp+=xp;S.stats.WEALTH+=1;
+    S.notices.push({vault:true,xp,grew,p:Math.round(p*100)});
+  }
+  S.balPrev=S.bal;
+}
+function judgeDay(k){
+  const d=S.days[k]||{done:{}};
+  const missed=reqIds(k).filter(q=>d.done[q.id]==null);
+  if(missed.length){
+    const pen=Math.min(50,missed.length*10);
+    const floor=cum(lvl(S.totalXp).L);
+    const lost=Math.max(0,Math.min(pen,S.totalXp-floor));
+    S.totalXp-=lost;
+    S.notices.push({k,missed:missed.map(q=>q.name),lost});
+  }
+  if(dow(k)===0){judgeWeek(weekStart(k));judgeVault(weekStart(k))}
+}
+function rollover(){
+  const t=today();
+  if(S.nextJudge>=t)return false;
+  let c=S.nextJudge<S.startDate?S.startDate:S.nextJudge;
+  if(diff(c,t)>400)c=addD(t,-400);
+  while(c<t){judgeDay(c);c=addD(c,1)}
+  S.nextJudge=t;
+  S.notices=S.notices.slice(-8);
+  persist();
+  return true;
+}
+
+/* ---------- backup and restore ---------- */
+function backupJson(){return JSON.stringify({app:'level-up-system',v:2,exported:new Date().toISOString(),data:S})}
+function backupAge(){
+  if(!S.lastBackup)return'No backup saved yet.';
+  const d=Math.floor((Date.now()-S.lastBackup)/864e5);
+  return d<=0?'Last backup: today.':d===1?'Last backup: yesterday.':'Last backup: '+d+' days ago.';
+}
+function markBackup(){S.lastBackup=Date.now();persist();render();toast('Backup saved','Keep the file somewhere safe, like Files or Google Drive.')}
+async function exportFile(){
+  const name='level-up-backup-'+today()+'.json';
+  const file=new File([backupJson()],name,{type:'application/json'});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Level Up backup'});markBackup();return}
+  }catch(e){if(e&&e.name==='AbortError')return}
+  const url=URL.createObjectURL(file),a=document.createElement('a');
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500);
+  markBackup();
+}
+async function copyBackup(){
+  try{await navigator.clipboard.writeText(backupJson());markBackup()}
+  catch(e){toast('Copy failed','Use Save backup file instead.','bad')}
+}
+function validBackup(d){
+  return !!d&&typeof d==='object'&&Number.isFinite(d.totalXp)&&d.totalXp>=0&&/^\d{4}-\d{2}-\d{2}$/.test(d.startDate||'')&&
+    !!d.days&&typeof d.days==='object'&&!!d.stats&&typeof d.stats==='object'&&Array.isArray(d.weights)&&d.weights.length>0&&
+    d.weights.every(w=>w&&Number.isFinite(w.kg)&&typeof w.d==='string');
+}
+function restoreFrom(text){
+  let o;
+  try{o=JSON.parse(text)}catch(e){toast('Restore failed','That is not a valid backup. Paste all of the text or pick the .json file.','bad');return}
+  const d=o&&o.data?o.data:o;
+  if(!validBackup(d)){toast('Restore failed','This does not look like a Level Up backup.','bad');return}
+  if(!confirm('Replace your current progress with this backup (level '+lvl(d.totalXp).L+', '+d.totalXp+' XP)?'))return;
+  S=normalize(d);
+  S.nextJudge=today();
+  S.lastBackup=Date.now();
+  UI.open.clear();persist();render();
+  toast('Restored','Progress loaded: level '+lvl(S.totalXp).L+'.');
+}
+
+/* ---------- actions ---------- */
+function toast(title,msg,kind){
+  const el=document.createElement('div');
+  el.className='toast '+(kind||'');
+  el.innerHTML='<small>'+esc(title)+'</small><div>'+esc(msg)+'</div>';
+  $('#toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+function showLevel(L,rankUp){
+  const o=$('#overlay');
+  o.innerHTML='<div class="lvl" role="dialog" aria-label="Level up"><small>System</small><h2>LEVEL UP</h2><div class="big num">'+L+'</div>'+
+    '<p>'+(rankUp?'Rank '+rank(L)+' reached. Quests get harder.':'Harder quests are coming. Keep going.')+'</p><button class="btn" data-act="closeLvl">Continue</button></div>';
+  o.hidden=false;
+}
+function toggle(qid,weight){
+  const k=today();
+  const q=questsFor(k).find(x=>x.id===qid);
+  if(!q)return;
+  const day=S.days[k]||(S.days[k]={done:{},clear:0});
+  const before=lvl(S.totalXp).L;
+  if(day.done[qid]!=null){
+    S.totalXp=Math.max(0,S.totalXp-day.done[qid]);
+    S.stats[q.stat]=Math.max(0,S.stats[q.stat]-q.pts);
+    S.counts[qid]=Math.max(0,(S.counts[qid]||0)-1);
+    delete day.done[qid];
+    if(qid==='weigh')S.weights=S.weights.filter(w=>w.d!==k);
+  }else{
+    const mult=1+Math.min(0.5,0.05*streakPrev(k))+(comeback(k)?0.25:0);
+    const x=Math.round(q.xp*mult);
+    day.done[qid]=x;
+    S.totalXp+=x;
+    S.stats[q.stat]+=q.pts;
+    S.counts[qid]=(S.counts[qid]||0)+1;
+    if(qid==='weigh'){S.weights=S.weights.filter(w=>w.d!==k);S.weights.push({d:k,kg:weight})}
+    toast('Quest cleared',q.name+'  +'+x+' XP'+(mult>1?'  (bonus)':''));
+  }
+  const all=allDone(k);
+  if(all&&!day.clear){day.clear=20;S.totalXp+=20;S.stats.DISC+=2;toast('Daily clear','All required quests done  +20 XP','gold')}
+  else if(!all&&day.clear){S.totalXp=Math.max(0,S.totalXp-day.clear);S.stats.DISC=Math.max(0,S.stats.DISC-2);day.clear=0}
+  const after=lvl(S.totalXp).L;
+  persist();
+  render();
+  if(after>before)showLevel(after,rank(after)!==rank(before));
+}
+function feedback(id,v){
+  const cur=S.feel[id]||0,nxt=Math.max(-3,Math.min(3,cur+v));
+  if(nxt===cur){toast('Coach',QN[id]+' is already as '+(v>0?'hard':'easy')+' as the trim goes.');return}
+  S.feel[id]=nxt;persist();render();
+  toast('Coach',QN[id]+' is '+(v>0?'harder':'easier')+' from now on.');
+}
+
+/* ---------- views ---------- */
+function hud(){
+  const L=lvl(S.totalXp),r=rank(L.L);
+  return '<section class="panel hud"><div class="hud-top"><div><p class="eyebrow">'+esc(S.name||'Player')+'</p>'+
+    '<h1 class="title">Level <span class="num">'+L.L+'</span></h1></div>'+
+    '<div class="rank rank-'+r+'"><span>Rank</span><b>'+r+'</b></div></div>'+
+    '<div class="bar" role="progressbar" aria-label="XP to next level" aria-valuemin="0" aria-valuemax="'+L.need+'" aria-valuenow="'+L.into+'"><i style="width:'+(L.into/L.need*100).toFixed(1)+'%"></i></div>'+
+    '<p class="xp-line"><span>'+L.into+' / '+L.need+' XP</span><span>'+streak()+' day streak</span></p></section>';
+}
+function notices(){
+  const extra=[];
+  if(UI.storeFail)extra.push('<div class="notice"><div><strong>Not saving</strong><p>This browser is blocking storage, so progress is lost when you close the page. Add the app to your home screen or use another browser, and save backups.</p></div></div>');
+  const due=S.lastBackup?(Date.now()-S.lastBackup)/864e5>=7:diff(S.startDate,today())>=3;
+  if(due)extra.push('<div class="notice info"><div><strong>Back up</strong><p>'+(S.lastBackup?'It has been over a week since your last backup.':'You have not saved a backup yet.')+' It takes two seconds.</p><button class="btn" data-act="export">Save backup</button></div></div>');
+  if(!S.notices.length&&!extra.length)return'';
+  return '<div class="notices">'+extra.join('')+S.notices.map((n,i)=>{
+    if(n.vault)return '<div class="notice boss"><div><strong>Vault interest</strong><p>Your savings paid +'+n.xp+' XP this week ('+n.p+'% of goal'+(n.grew?', and the balance grew':'')+').</p></div><button class="x" data-act="dismiss" data-i="'+i+'" aria-label="Dismiss">×</button></div>';
+    if(n.boss)return '<div class="notice boss"><div><strong>Boss defeated</strong><p>Week of '+fmtDay(n.ws)+': '+n.done+' of '+n.total+' tasks done. +150 XP.</p></div><button class="x" data-act="dismiss" data-i="'+i+'" aria-label="Dismiss">×</button></div>';
+    return '<div class="notice"><div><strong>Penalty</strong><p>'+fmtDay(n.k)+': missed '+esc(n.missed.join(', '))+'. '+(n.lost?'-'+n.lost+' XP.':'No XP lost this time.')+'</p></div><button class="x" data-act="dismiss" data-i="'+i+'" aria-label="Dismiss">×</button></div>';
+  }).join('')+'</div>';
+}
+function coachBox(k,wid){
+  if(comeback(k))return '<div class="coach comeback"><strong>Comeback day</strong><p>You missed some days lately. Your workout and income session are lighter today and every quest gives +25% XP. Get one win and the streak starts again.</p></div>';
+  if(!wid)return'';
+  const x=rateInfo(wid,k,7);
+  return '<div class="coach"><strong>Weak spot</strong><p>'+esc(QN[wid])+': done '+x.d+' of the last '+x.len+' days, so it is first on your list.'+
+    (SCALED.includes(wid)?' It is a little easier until you are back on track.':'')+'</p></div>';
+}
+const CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="square"/></svg>';
+function card(q,k,isWeak){
+  const xp=S.days[k]&&S.days[k].done[q.id];
+  const done=xp!=null,open=UI.open.has(q.id);
+  const last=S.weights.length?S.weights[S.weights.length-1].kg:66;
+  const input=q.input&&!done?'<div class="weigh"><input class="field tnum" id="weighInput" type="number" inputmode="decimal" step="0.1" min="30" max="200" value="'+last+'" aria-label="Weight in kg"><button class="btn" data-act="weigh">Log kg</button></div>':'';
+  const fb=q.fb?'<div class="fb"><span>Difficulty step <b class="tnum">'+q.step+'</b>. Too easy or too hard?</span>'+
+    '<button class="btn sm" data-act="fb" data-id="'+q.id+'" data-v="1">Make harder</button>'+
+    '<button class="btn sm" data-act="fb" data-id="'+q.id+'" data-v="-1">Make easier</button></div>':'';
+  return '<article class="quest'+(done?' is-done':'')+'">'+
+    '<button class="q-main" data-act="open" data-id="'+q.id+'" aria-expanded="'+open+'">'+
+    '<span class="q-title">'+esc(q.name)+'</span>'+
+    '<span class="q-meta"><b>+'+(done?xp:q.xp)+' XP</b><i>'+q.mins+' min</i><i>'+STAT[q.stat]+'</i>'+(q.req?'':'<i>Bonus</i>')+(isWeak?'<i class="weak">Weak spot</i>':'')+'</span>'+
+    '<span class="q-sum">'+esc(q.sum)+'</span></button>'+
+    '<button class="q-check" data-act="'+(q.input&&!done?'open':'toggle')+'" data-id="'+q.id+'" aria-label="'+(done?'Undo ':'Complete ')+esc(q.name)+'">'+CHECK+'</button>'+
+    '<div class="q-body"'+(open?'':' hidden')+'><ul>'+q.lines.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>'+(q.extra||'')+input+fb+'</div></article>';
+}
+function viewQuests(){
+  const k=today(),qs=questsFor(k),req=qs.filter(q=>q.req);
+  const cleared=req.filter(q=>doneOn(k,q.id)).length;
+  const bonus=S.days[k]&&S.days[k].clear;
+  const w=weak(k),cb=comeback(k),wid=w&&!cb&&!doneOn(k,w.id)?w.id:null;
+  const ordered=wid?[qs.find(q=>q.id===wid)].concat(qs.filter(q=>q.id!==wid)):qs;
+  return notices()+
+    '<div class="day-head"><div><p class="eyebrow">Today</p><h2>'+fmtDay(k)+'</h2></div><p class="count"><b>'+cleared+'</b>/'+req.length+'<span>required</span></p></div>'+
+    coachBox(k,wid)+
+    '<div class="quests">'+ordered.filter(q=>q.req).map(q=>card(q,k,q.id===wid)).join('')+'</div>'+
+    '<p class="sec" style="margin:4px 0 -4px">Bonus quests · skipping costs nothing</p>'+
+    '<div class="quests">'+ordered.filter(q=>!q.req).map(q=>card(q,k,false)).join('')+'</div>'+
+    '<p class="hint">'+(bonus?'Daily clear bonus earned: +20 XP.':'Clear every required quest for +20 XP. Each required quest you miss costs 10 XP, up to 50 per day. You never lose a level.')+'</p>';
+}
+function chart(){
+  const w=S.weights.slice(-12);
+  if(w.length<2)return'<p class="hint">Your Sunday weigh-ins will draw a line here.</p>';
+  const W=320,H=120,pl=34,pr=10,pt=10,pb=22;
+  const vals=w.map(x=>x.kg);let mn=Math.min(...vals),mx=Math.max(...vals);
+  if(mx-mn<2){mx+=1;mn-=1}
+  const x=i=>pl+(W-pl-pr)*i/(w.length-1),y=v=>pt+(H-pt-pb)*(1-(v-mn)/(mx-mn));
+  const pts=w.map((p,i)=>x(i).toFixed(1)+','+y(p.kg).toFixed(1)).join(' ');
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Weight over time">'+
+    '<line class="gd" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(mn)+'" y2="'+y(mn)+'"/><line class="gd" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(mx)+'" y2="'+y(mx)+'"/>'+
+    '<text class="ax" x="'+(pl-6)+'" y="'+(y(mx)+3)+'" text-anchor="end">'+mx.toFixed(1)+'</text><text class="ax" x="'+(pl-6)+'" y="'+(y(mn)+3)+'" text-anchor="end">'+mn.toFixed(1)+'</text>'+
+    '<polyline class="ln" points="'+pts+'"/>'+
+    w.map((p,i)=>'<circle class="dt" cx="'+x(i).toFixed(1)+'" cy="'+y(p.kg).toFixed(1)+'" r="3.5"/>').join('')+
+    '<text class="ax" x="'+pl+'" y="'+(H-4)+'">'+fmtDay(w[0].d)+'</text><text class="ax" x="'+(W-pr)+'" y="'+(H-4)+'" text-anchor="end">'+fmtDay(w[w.length-1].d)+'</text></svg>';
+}
+function viewReview(){
+  const k=today();
+  const rows=CORE.map(id=>{
+    const x=rateInfo(id,k,7);
+    if(!x)return'';
+    return '<div><div class="part-top"><span>'+QN[id]+'</span><span>'+x.d+' / '+x.len+'</span></div><div class="bar'+(x.r>=.7?' gold':'')+'"><i style="width:'+(x.r*100).toFixed(0)+'%"></i></div></div>';
+  }).join('');
+  if(!rows)return '<section class="panel"><p class="sec">Coach review</p><p class="hint">The review starts after 3 days of data. It reads your last 7 days and adjusts your quests.</p></section>';
+  const tips=[];
+  const w=weak(k);
+  if(w){const x=rateInfo(w.id,k,7);tips.push('Weak spot: '+QN[w.id]+' ('+x.d+' of '+x.len+' days). It stays at the top of your list until it is back above 70%.')}
+  const eased=SCALED.filter(id=>auto(id,k)<0).map(id=>QN[id]);
+  if(eased.length)tips.push('Eased back for now: '+eased.join(', ')+'. They are lighter until you finish most days again.');
+  if(comeback(k))tips.push('Today is a comeback day: lighter load and +25% XP.');
+  const nu=nutrition(k);
+  tips.push(nu.t==null?'Weight trend appears after Sunday weigh-ins over about 2 weeks. Calories then adjust to your pace.'
+    :'Weight '+(nu.t>=0?'+':'')+nu.t.toFixed(2)+' kg a week (plan: +'+(S.paceKg/4.33).toFixed(2)+'). '+nu.note+(nu.adj?', so calories are '+(nu.adj>0?'+':'')+nu.adj+' kcal.':'.'));
+  if(diff(S.startDate,k)>=14){
+    const t=dowStats(k).map((v,i)=>({i,n:v[1],r:v[1]?v[0]/v[1]:0})).filter(o=>o.n>=2).sort((a,b)=>b.r-a.r);
+    if(t.length>=3){const b=t[0],c=t[t.length-1];
+      if(b.r-c.r>=.25)tips.push('Best day for full clears: '+DAYS[b.i]+' ('+Math.round(b.r*100)+'%). Hardest: '+DAYS[c.i]+' ('+Math.round(c.r*100)+'%).')}
+  }
+  return '<section class="panel"><p class="sec">Coach review · last 7 days</p><div class="boss-parts" style="margin:0 0 14px">'+rows+'</div>'+
+    '<ul class="tips">'+tips.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></section>';
+}
+function viewStatus(){
+  const L=lvl(S.totalXp).L;
+  const rows=Object.keys(STAT).map(key=>{
+    const v=10+S.stats[key];
+    return '<div class="stat-row"><b>'+STAT[key]+'</b><div class="bar"><i style="width:'+Math.min(100,v/(10+Math.max(40,...Object.values(S.stats)))*100).toFixed(0)+'%"></i></div><span>'+v+'</span></div>';
+  }).join('');
+  const cur=S.weights[S.weights.length-1].kg,start=S.weights[0].kg;
+  const pct=Math.max(0,Math.min(100,(cur-start)/(S.goalKg-start)*100));
+  const rem=Math.max(0,S.goalKg-cur);
+  const eta=rem>0&&S.paceKg>0?new Date(Date.now()+rem/S.paceKg*30.4*864e5).toLocaleDateString('en-GB',{month:'short',year:'numeric'}):'';
+  const total=Object.values(S.counts).reduce((a,b)=>a+b,0);
+  return viewReview()+
+    '<section class="panel"><p class="sec">Stats</p><div class="stats">'+rows+'</div></section>'+
+    '<div class="grid2"><div class="kv"><small>Total XP</small><b>'+S.totalXp+'</b></div><div class="kv"><small>Quests cleared</small><b>'+total+'</b></div>'+
+    '<div class="kv"><small>Streak</small><b>'+streak()+' d</b></div><div class="kv"><small>Best streak</small><b>'+S.bestStreak+' d</b></div></div>'+
+    '<section class="panel"><p class="sec">Body weight</p>'+
+    '<div class="hud-top" style="align-items:baseline"><div class="num" style="font:700 2rem/1 var(--f-display)">'+cur.toFixed(1)+' <span class="mute" style="font-size:1rem">kg</span></div><div class="mute num">Goal '+S.goalKg+' kg · '+S.heightCm+' cm</div></div>'+
+    '<div class="bar" style="margin:12px 0 6px"><i style="width:'+pct.toFixed(1)+'%"></i></div>'+
+    '<p class="hint">'+(rem>0?rem.toFixed(1)+' kg to go. At '+S.paceKg+' kg a month that is about '+eta+'.':'Goal weight reached.')+'</p>'+
+    '<div style="margin-top:14px">'+chart()+'</div></section>';
+}
+function viewBoss(){
+  const ws=weekStart(today()),t=weekTally(ws);
+  const part=(n,a)=>'<div><div class="part-top"><span>'+n+'</span><span>'+a[0]+' / '+a[1]+'</span></div><div class="bar"><i style="width:'+(a[1]?a[0]/a[1]*100:0).toFixed(0)+'%"></i></div></div>';
+  const logs=Object.keys(S.bosses).sort().reverse().slice(0,6);
+  const wpct=Math.max(0,Math.min(100,(S.weights[S.weights.length-1].kg-S.weights[0].kg)/(S.goalKg-S.weights[0].kg)*100));
+  const spct=S.subsGoal>0?Math.min(100,S.subs/S.subsGoal*100):0;
+  return '<section class="panel"><p class="eyebrow">Weekly boss · resets Monday</p><h2 class="boss-name">The Iron Week</h2>'+
+    '<p class="hint">Finish at least '+t.goal+' of '+t.total+' tasks this week to defeat it.</p>'+
+    '<div class="boss-parts">'+part('Supplements',t.vit)+part('Workouts',t.train)+part('Shorts posted',t.short)+'</div>'+
+    '<p class="reward">Reward: +150 XP, +3 Discipline</p></section>'+
+    (logs.length?'<section><p class="sec">Past bosses</p><ul class="log">'+logs.map(w=>{const b=S.bosses[w];return '<li class="'+(b.won?'won':'lost')+'"><span>Week of '+fmtDay(w)+'</span><span>'+(b.won?'Defeated':'Survived')+' · '+b.done+'/'+b.total+'</span></li>'}).join('')+'</ul></section>':'')+
+    '<section class="panel"><p class="eyebrow">S-Rank goal</p><h2 class="boss-name">Final Boss</h2>'+
+    '<p class="hint">80 kg and muscular. A monetized channel. Income that lets you and your girlfriend focus on your lives.</p>'+
+    '<div class="boss-parts"><div><div class="part-top"><span>Body</span><span>'+S.weights[S.weights.length-1].kg.toFixed(1)+' / '+S.goalKg+' kg</span></div><div class="bar gold"><i style="width:'+wpct.toFixed(0)+'%"></i></div></div>'+
+    '<div><div class="part-top"><span>Channel</span><span>'+S.subs+' / '+S.subsGoal+' subscribers</span></div><div class="bar gold"><i style="width:'+spct.toFixed(0)+'%"></i></div></div></div>'+
+    '<div class="pair"><label class="lab">Subscribers now<input class="field tnum" type="number" inputmode="numeric" min="0" data-field="subs" value="'+S.subs+'"></label>'+
+    '<label class="lab">Subscriber target<input class="field tnum" type="number" inputmode="numeric" min="1" data-field="subsGoal" value="'+S.subsGoal+'"></label></div>'+
+    '<p class="hint" style="margin-top:10px">Check the exact monetization requirements in YouTube Studio and set the target to match. Under half the target, income sessions focus on growing the channel; after that, on earning.</p></section>'+
+    '<section class="panel"><p class="eyebrow">Vault · pays XP every Sunday</p><h2 class="boss-name">Savings</h2>'+
+    '<div class="part-top"><span>Balance</span><span>'+S.bal.toLocaleString('en-GB')+' / '+S.balGoal.toLocaleString('en-GB')+'</span></div><div class="bar gold"><i style="width:'+(S.balGoal>0?Math.min(100,S.bal/S.balGoal*100):0).toFixed(0)+'%"></i></div>'+
+    '<div class="pair"><label class="lab">Savings now<input class="field tnum" type="number" inputmode="decimal" min="0" data-field="bal" value="'+S.bal+'"></label>'+
+    '<label class="lab">Savings goal<input class="field tnum" type="number" inputmode="decimal" min="1" data-field="balGoal" value="'+S.balGoal+'"></label></div>'+
+    '<p class="hint" style="margin-top:10px">Each Sunday the Vault pays 10 XP, up to 30 more as your balance nears the goal, and 15 extra if it grew that week. Growing it counts as much as having it, so a small deposit still pays. Update the balance when it changes. After 3 weeks without an update the interest pauses. A good first goal is 3 months of living costs.</p></section>';
+}
+function viewSetup(){
+  return '<section class="panel form"><p class="sec" style="margin:0">Player</p>'+
+    '<label class="lab">Name<input class="field" type="text" maxlength="24" data-field="name" value="'+esc(S.name)+'"></label>'+
+    '<div class="pair" style="margin:0"><label class="lab">Goal weight (kg)<input class="field tnum" type="number" inputmode="decimal" step="0.5" data-field="goalKg" value="'+S.goalKg+'"></label>'+
+    '<label class="lab">Gain per month (kg)<input class="field tnum" type="number" inputmode="decimal" step="0.1" data-field="paceKg" value="'+S.paceKg+'"></label></div>'+
+    '<div class="pair" style="margin:0"><label class="lab">Age (for calories)<input class="field tnum" type="number" inputmode="numeric" min="10" max="90" data-field="age" value="'+S.age+'"></label><label class="lab">Height (cm)<input class="field tnum" type="number" inputmode="numeric" min="120" max="230" data-field="heightCm" value="'+S.heightCm+'"></label></div>'+
+    '<div><p class="lab" style="margin-bottom:8px">Workout days</p><div class="days">'+
+    [1,2,3,4,5,6,0].map(d=>'<button class="day" data-act="day" data-d="'+d+'" aria-pressed="'+S.trainDays.includes(d)+'">'+DAYS[d]+'</button>').join('')+'</div></div></section>'+
+    '<section class="panel form"><p class="sec" style="margin:0">Backup</p>'+
+    '<p class="hint">Your progress is stored in this browser on this phone. Clearing site data, switching browsers or getting a new phone erases it, so save a backup file now and then. Restoring a backup does not penalise the days since it was made. '+backupAge()+'</p>'+
+    '<div class="pair" style="margin:0"><button class="btn" data-act="export">Save backup file</button><button class="btn" data-act="copy">Copy backup text</button></div>'+
+    '<label class="btn filebtn">Restore from file<input type="file" id="restoreFile" accept=".json,application/json" aria-label="Choose a backup file to restore"></label>'+
+    '<textarea class="field" id="pasteBox" rows="3" placeholder="Or paste backup text here" aria-label="Backup text to restore"></textarea>'+
+    '<button class="btn" data-act="restorePaste">Restore from pasted text</button></section>'+
+    '<section class="panel form"><p class="sec" style="margin:0">Reset</p>'+
+    '<p class="hint">Erases all XP, levels, stats and weight history and starts over.</p>'+
+    '<button class="btn danger" data-act="reset">'+(UI.resetArm?'Tap again to erase everything':'Reset progress')+'</button></section>';
+}
+const TABS=[['quests','Quests'],['status','Status'],['boss','Boss'],['setup','Setup']];
+function render(){
+  $('#hud').innerHTML=hud();
+  const v={quests:viewQuests,status:viewStatus,boss:viewBoss,setup:viewSetup}[UI.tab];
+  $('#view').innerHTML=v();
+  $('#nav').innerHTML=TABS.map(t=>'<button data-act="tab" data-t="'+t[0]+'"'+(UI.tab===t[0]?' aria-current="page"':'')+'>'+t[1]+'</button>').join('');
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');
+  if(!b)return;
+  const a=b.dataset.act;
+  if(a==='tab'){UI.tab=b.dataset.t;UI.resetArm=false;render();window.scrollTo(0,0)}
+  else if(a==='open'){const id=b.dataset.id;UI.open.has(id)?UI.open.delete(id):UI.open.add(id);render()}
+  else if(a==='toggle'){toggle(b.dataset.id)}
+  else if(a==='weigh'){const v=parseFloat($('#weighInput').value);if(v>=30&&v<=200)toggle('weigh',Math.round(v*10)/10);else toast('Check the number','Enter your weight in kg, for example 66.4','bad')}
+  else if(a==='fb'){feedback(b.dataset.id,+b.dataset.v)}
+  else if(a==='export'){exportFile()}
+  else if(a==='copy'){copyBackup()}
+  else if(a==='restorePaste'){restoreFrom($('#pasteBox').value.trim())}
+  else if(a==='dismiss'){S.notices.splice(+b.dataset.i,1);persist();render()}
+  else if(a==='closeLvl'){$('#overlay').hidden=true}
+  else if(a==='day'){const d=+b.dataset.d,i=S.trainDays.indexOf(d);i>=0?S.trainDays.splice(i,1):S.trainDays.push(d);persist();render()}
+  else if(a==='reset'){
+    if(!UI.resetArm){UI.resetArm=true;render()}
+    else{S=fresh();UI.resetArm=false;UI.open.clear();persist();render();toast('System','Progress reset. A new run begins.')}
+  }
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='restoreFile'){
+    const f=e.target.files&&e.target.files[0];
+    e.target.value='';
+    if(!f)return;
+    const r=new FileReader();
+    r.onload=()=>restoreFrom(String(r.result));
+    r.onerror=()=>toast('Restore failed','Could not read that file.','bad');
+    r.readAsText(f);
+    return;
+  }
+  const f=e.target.dataset&&e.target.dataset.field;
+  if(!f)return;
+  let v=e.target.value;
+  if(f==='name')S.name=v.trim()||'Player';
+  else{
+    v=parseFloat(v);
+    const zeroOk=f==='subs'||f==='bal';
+    if(!(v>0)&&!zeroOk)return render();
+    if(zeroOk&&!(v>=0))return render();
+    S[f]=v;
+    if(f==='bal')S.balAt=today();
+  }
+  persist();render();
+});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&rollover())render()});
+
+/* ---------- boot ---------- */
+rollover();
+render();
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+})();
+</script>
+</body>
+</html>
